@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Corridor Control Room | ITS-EVM</title>
+    <meta name="description" content="Real-time Intelligent Green Corridor System dashboard for emergency vehicle preemption monitoring.">
+
+    <!-- Tailwind CSS v3 CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'gc-dark': '#0a0e1a',
+                        'gc-card': '#111827',
+                        'gc-accent': '#10b981',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/custom.css">
+</head>
+<body class="bg-gc-dark text-gray-200 min-h-screen">
+
+    <!-- ═══════════════════ HEADER BAR ═══════════════════ -->
+    <header class="header-bar sticky top-0 z-50 px-5 py-3">
+        <div class="max-w-[1600px] mx-auto flex items-center justify-between">
+            <!-- Left: Branding -->
+            <div class="flex items-center gap-3">
+                <svg class="w-7 h-7 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                </svg>
+                <h1 class="header-title text-lg font-bold tracking-wider">GREEN CORRIDOR CONTROL ROOM</h1>
+            </div>
+
+            <!-- Center: Sim Status -->
+            <div class="hidden md:flex items-center gap-6 text-xs font-mono text-gray-400">
+                <div class="flex items-center gap-2">
+                    <div id="sim-status-dot" class="status-dot online"></div>
+                    <span id="sim-status-text">RUNNING</span>
+                </div>
+                
+                <select id="scenario-selector" class="bg-gc-card border border-gray-700 text-gray-300 text-xs rounded px-2 py-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+                    <option value="scenario_a">Scenario A: Clear Corridor (Baseline)</option>
+                    <option value="scenario_b" selected>Scenario B: Incident Bypass (Dynamic A*)</option>
+                    <option value="scenario_c">Scenario C: Multi-Vehicle Conflict (Arbitration)</option>
+                    <option value="scenario_d">Scenario D: Off-Duty Ambulance (False Alarm)</option>
+                    <option value="scenario_e">Scenario E: Urban Saturation (Stress Test)</option>
+                </select>
+
+                <span id="sim-time" class="text-cyan-400 font-semibold">T=0s</span>
+                <span id="sim-step" class="text-gray-500">Step 0</span>
+                <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-bold tracking-widest" id="sim-mode">PROPOSED</span>
+            </div>
+
+            <!-- Right: WS Status -->
+            <div class="flex items-center gap-2 text-xs font-mono">
+                <div id="ws-status-dot" class="status-dot offline"></div>
+                <span id="ws-status-text" class="text-gray-500">OFFLINE</span>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="sim-progress mt-2 max-w-[1600px] mx-auto">
+            <div id="sim-progress-bar" class="sim-progress-bar" style="width: 0%"></div>
+        </div>
+    </header>
+
+    <!-- ═══════════════════ MAIN GRID ═══════════════════ -->
+    <main class="max-w-[1600px] mx-auto px-4 py-5">
+        <div class="dashboard-grid">
+
+            <!-- ────────── PANEL 1: AI Perception Feed ────────── -->
+            <div class="panel-card">
+                <div class="panel-header">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4m-9-9h4m14 0h4"/>
+                        <path d="M5.6 5.6l2.8 2.8m7.2 7.2l2.8 2.8m0-15.2l-2.8 2.8M8.4 15.6l-2.8 2.8"/>
+                    </svg>
+                    AI Perception Feed &mdash; Vision Module
+                </div>
+                <div class="panel-body">
+                    <!-- Status Badge -->
+                    <div id="vision-status" class="mb-3">
+                        <span class="badge badge-offduty">AWAITING TELEMETRY</span>
+                    </div>
+
+                    <!-- Readouts -->
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div class="metric-card">
+                            <div id="vision-variance" class="metric-value cyan">--</div>
+                            <div class="metric-label">Temporal Variance (&sigma;&sup2;)</div>
+                        </div>
+                        <div class="metric-card">
+                            <div id="vision-confidence" class="metric-value blue">--</div>
+                            <div class="metric-label">Struct. Confidence</div>
+                        </div>
+                    </div>
+
+                    <!-- Variance Chart -->
+                    <div class="chart-container">
+                        <canvas id="variance-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ────────── PANEL 2: Network & Routing ────────── -->
+            <div class="panel-card">
+                <div class="panel-header">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                    </svg>
+                    Network & Routing &mdash; Dynamic A* Module
+                </div>
+                <div class="panel-body">
+                    <div class="text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-semibold">Active Route Edges</div>
+                    <div id="route-edges" class="flex flex-wrap gap-1 items-center mb-4 min-h-[28px]">
+                        <span style="color:#6b7280">Awaiting route computation...</span>
+                    </div>
+
+                    <div class="text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-semibold">Upcoming Intersection Phase</div>
+                    <div id="route-phase">
+                        <div class="phase-indicator phase-static">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            </svg>
+                            AWAITING DATA
+                        </div>
+                    </div>
+
+                    <!-- Blocked edges info -->
+                    <div class="mt-4 text-[10px] uppercase tracking-widest text-gray-500 mb-1 font-semibold">Blocked Edges</div>
+                    <div id="blocked-edges" class="text-xs text-red-400 font-mono">
+                        --
+                    </div>
+                </div>
+            </div>
+
+            <!-- ────────── PANEL 3: Live Simulation Map ────────── -->
+            <div class="panel-card span-2">
+                <div class="panel-header">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3h18v18H3z"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
+                    </svg>
+                    Live Operations Map &mdash; Network Topology
+                </div>
+                <div class="panel-body" style="padding: 0;">
+                    <canvas id="sim-canvas" width="800" height="400" style="width: 100%; height: auto; display: block; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;"></canvas>
+                </div>
+            </div>
+
+            <!-- ────────── PANEL 4: Conflict Arbitration Queue ────────── -->
+            <div class="panel-card">
+                <div class="panel-header">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    Conflict Arbitration &mdash; ETA Priority Queue
+                </div>
+                <div class="panel-body">
+                    <div class="flex gap-4 mb-3">
+                        <div class="flex items-center gap-2 text-xs font-mono">
+                            <span class="text-gray-500">Deadlocks:</span>
+                            <span id="arb-deadlocks" class="text-emerald-400 font-bold">0</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs font-mono">
+                            <span class="text-gray-500">Resolved:</span>
+                            <span id="arb-resolved" class="text-cyan-400 font-bold">0</span>
+                        </div>
+                    </div>
+                    <div class="panel-scroll">
+                        <table class="arb-table">
+                            <thead>
+                                <tr>
+                                    <th>Vehicle ID</th>
+                                    <th>Distance (m)</th>
+                                    <th>Speed (m/s)</th>
+                                    <th>ETA (s)</th>
+                                    <th>Priority</th>
+                                </tr>
+                            </thead>
+                            <tbody id="arb-tbody">
+                                <tr><td colspan="5" style="text-align:center;color:#6b7280;padding:16px">
+                                    Awaiting vehicle data</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ────────── PANEL 5: VMS Display (spans 3 cols) ────────── -->
+            <div class="panel-card span-3">
+                <div class="panel-header">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h12M6 12h8"/>
+                    </svg>
+                    Digital Variable Message Sign &mdash; VMS Broadcast
+                </div>
+                <div class="panel-body">
+                    <div class="vms-display" id="vms-message">
+                        SYSTEM STANDBY &mdash; NO ACTIVE CORRIDOR PREEMPTION
+                    </div>
+                </div>
+            </div>
+
+            <!-- ────────── PANEL 6: Performance Metrics (spans 3 cols) ────────── -->
+            <div class="panel-card span-3">
+                <div class="panel-header">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/>
+                    </svg>
+                    Performance Metrics &mdash; Dual-Domain Evaluation
+                </div>
+                <div class="panel-body">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="metric-card">
+                            <div id="metric-proposed-tt" class="metric-value cyan">--</div>
+                            <div class="metric-label">Proposed A* Travel Time</div>
+                        </div>
+                        <div class="metric-card">
+                            <div id="metric-baseline-tt" class="metric-value red">--</div>
+                            <div class="metric-label">Baseline Static Travel Time</div>
+                        </div>
+                        <div class="metric-card">
+                            <div id="metric-reduction" class="metric-value green">--</div>
+                            <div class="metric-label">Time Saved (%)</div>
+                        </div>
+                        <div class="metric-card">
+                            <div id="metric-wait" class="metric-value green">--</div>
+                            <div class="metric-label">Intersection Wait Time</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /dashboard-grid -->
+    </main>
+
+    <!-- ═══════════════════ FOOTER ═══════════════════ -->
+    <footer class="text-center py-4 text-[10px] text-gray-600 font-mono tracking-wider">
+        INTELLIGENT GREEN CORRIDOR SYSTEM &bull; ITS-EVM &bull; EDGE COMPUTER VISION + SUMO/TraCI
+    </footer>
+
+    <!-- App JS -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

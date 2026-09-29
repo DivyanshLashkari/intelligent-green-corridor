@@ -1,0 +1,341 @@
+/* ── Green Corridor Control Room ── Custom Styles ── */
+
+/* Import monospace font for VMS and data displays */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+    --bg-primary: #0a0e1a;
+    --bg-card: #111827;
+    --bg-card-alt: #1a1f35;
+    --border-glow: rgba(16, 185, 129, 0.15);
+    --accent-green: #10b981;
+    --accent-red: #ef4444;
+    --accent-amber: #f59e0b;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --text-primary: #e5e7eb;
+    --text-muted: #9ca3af;
+    --vms-orange: #ff9500;
+    --vms-bg: #0d0d0d;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+/* ── Header ── */
+.header-bar {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+    backdrop-filter: blur(12px);
+}
+
+.header-title {
+    font-family: 'Orbitron', monospace;
+    letter-spacing: 0.12em;
+    background: linear-gradient(90deg, #10b981, #06b6d4, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.status-dot.online { background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
+.status-dot.offline { background: var(--accent-red); box-shadow: 0 0 8px var(--accent-red); }
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* ── Cards ── */
+.panel-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.panel-card:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.08);
+}
+
+.panel-header {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 14px 18px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.panel-header .icon {
+    width: 18px;
+    height: 18px;
+    opacity: 0.6;
+}
+
+.panel-body {
+    padding: 14px 18px 18px;
+}
+
+/* ── Status Badges ── */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.badge-active {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
+}
+
+.badge-offduty {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.badge-queued {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+/* ── VMS LED Board ── */
+.vms-display {
+    background: var(--vms-bg);
+    border: 2px solid rgba(255, 149, 0, 0.25);
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--vms-orange);
+    text-shadow: 0 0 10px rgba(255, 149, 0, 0.5), 0 0 30px rgba(255, 149, 0, 0.15);
+    letter-spacing: 0.04em;
+    line-height: 1.6;
+    min-height: 56px;
+    position: relative;
+    overflow: hidden;
+}
+
+.vms-display::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.15) 2px,
+        rgba(0, 0, 0, 0.15) 4px
+    );
+    pointer-events: none;
+}
+
+/* ── Route Display ── */
+.route-edge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px 8px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: #93c5fd;
+}
+
+.route-edge.current {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #6ee7b7;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.15);
+}
+
+.route-arrow {
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    margin: 0 2px;
+}
+
+/* ── Arbitration Table ── */
+.arb-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.78rem;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.arb-table th {
+    text-align: left;
+    padding: 8px 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.arb-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.arb-table tr.priority-1 {
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.arb-table tr.priority-1 td {
+    color: #6ee7b7;
+}
+
+.arb-table tr.queued {
+    background: rgba(245, 158, 11, 0.06);
+}
+
+.arb-table tr.queued td {
+    color: #fcd34d;
+}
+
+/* ── Metric Cards ── */
+.metric-card {
+    background: var(--bg-card-alt);
+    border-radius: 10px;
+    padding: 16px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    text-align: center;
+}
+
+.metric-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.metric-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.metric-value.green { color: var(--accent-green); text-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+.metric-value.red { color: var(--accent-red); text-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
+.metric-value.amber { color: var(--accent-amber); }
+.metric-value.cyan { color: var(--accent-cyan); text-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
+.metric-value.blue { color: var(--accent-blue); }
+
+/* ── Chart container ── */
+.chart-container {
+    position: relative;
+    height: 180px;
+    width: 100%;
+}
+
+/* ── Phase indicator ── */
+.phase-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.phase-green {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+}
+
+.phase-static {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fbbf24;
+}
+
+/* ── Sim time bar ── */
+.sim-progress {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.sim-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* ── Scrollbar in panels ── */
+.panel-scroll {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* ── Grid layout ── */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 16px;
+}
+
+.span-2 { grid-column: span 2; }
+.span-3 { grid-column: span 3; }
+
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .span-3 { grid-column: span 2; }
+}
+
+@media (max-width: 640px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    .span-2, .span-3 { grid-column: span 1; }
+}

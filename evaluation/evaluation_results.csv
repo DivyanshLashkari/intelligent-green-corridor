@@ -1,0 +1,8 @@
+Metric,Baseline,Proposed,Target,Pass
+Vision Precision (%),50.0,100.0,>= 95.0,-
+Vision Recall (%),100.0,100.0,>= 90.0,-
+Vision F1-Score (%),66.67,100.0,>= 94.0,-
+Avg Travel Time (s),60.0,24.0,>= 30% reduction,-
+Travel Time Reduction (%),--,60.0,>= 30.0,-
+Signal Wait / Intersection (s),55.0,2.0,<= 5.0,-
+Arbitration Deadlocks,N/A (no resolver),0,0,-

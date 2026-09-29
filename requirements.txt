@@ -1,0 +1,6 @@
+sumolib>=1.18.0
+traci>=1.18.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
