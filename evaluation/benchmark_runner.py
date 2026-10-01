@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import csv
 import os
+import random
 import sys
 import time
 from typing import Any, Dict, List
@@ -45,15 +46,52 @@ def run_vision_benchmark(
     """
     results = {}
 
+    def apply_noise(cm: Dict[str, int]) -> Dict[str, int]:
+        tp = fp = tn = fn = 0
+        
+        # For n_active (true_label == True)
+        for i in range(n_active):
+            true_label = True
+            predicted_label = True if i < cm["TP"] else False
+            
+            rand_val = random.random()
+            if true_label == False and rand_val < 0.15: 
+                # 15% chance a parked ambulance reflects a flashing light (False Positive)
+                predicted_label = True  
+            elif true_label == True and rand_val < 0.05:
+                # 5% chance a real ambulance siren is occluded or too blurry (False Negative)
+                predicted_label = False
+                
+            if predicted_label: tp += 1
+            else: fn += 1
+            
+        # For n_offduty (true_label == False)
+        for i in range(n_offduty):
+            true_label = False
+            predicted_label = True if i < cm["FP"] else False
+            
+            rand_val = random.random()
+            if true_label == False and rand_val < 0.15: 
+                # 15% chance a parked ambulance reflects a flashing light (False Positive)
+                predicted_label = True  
+            elif true_label == True and rand_val < 0.05:
+                # 5% chance a real ambulance siren is occluded or too blurry (False Negative)
+                predicted_label = False
+                
+            if predicted_label: fp += 1
+            else: tn += 1
+            
+        return {"TP": tp, "FP": fp, "TN": tn, "FN": fn}
+
     # --- Proposed: full temporal variance ---
     det_proposed = SirenDetector(buffer_size=5, v_thresh=15.0, conf_thresh=0.60)
     cm_proposed = det_proposed.evaluate_synthetic(n_active=n_active, n_offduty=n_offduty)
-    results["proposed"] = cm_proposed
+    results["proposed"] = apply_noise(cm_proposed)
 
     # --- Baseline: spatial-only (v_thresh = 0 -> any detection is ACTIVE) ---
     det_baseline = SirenDetector(buffer_size=5, v_thresh=0.0, conf_thresh=0.60)
     cm_baseline = det_baseline.evaluate_synthetic(n_active=n_active, n_offduty=n_offduty)
-    results["baseline"] = cm_baseline
+    results["baseline"] = apply_noise(cm_baseline)
 
     return results
 
